@@ -2,7 +2,8 @@
 
 ## Name
 
-*file* - enables serving zone data from an RFC 1035-style master file.
+*file* - enables serving zone data from an RFC 1035-style master file with semi-authoritative
+options.
 
 ## Description
 
@@ -10,6 +11,10 @@ The *file* plugin is used for an "old-style" DNS server. It serves from a preloa
 on disk contained RFC 1035 styled data. If the zone file contains signatures (i.e., is signed using
 DNSSEC), correct DNSSEC answers are returned. Only NSEC is supported! If you use this setup *you*
 are responsible for re-signing the zonefile.
+
+Additionally, this modified plugin supports a semi-authoritative mode, where results not known by
+the nameserver are forwarded to the next chain, allowing for a horizon view if the record is not
+locally known for a particular record in a given zone.
 
 ## Syntax
 
@@ -27,12 +32,14 @@ If you want to round-robin A and AAAA responses look at the *loadbalance* plugin
 ~~~
 file DBFILE [ZONES... ] {
     reload DURATION
+    fallthrough
 }
 ~~~
 
 * `reload` interval to perform a reload of the zone if the SOA version changes. Default is one minute.
   Value of `0` means to not scan for changes and reload. For example, `30s` checks the zonefile every 30 seconds
   and reloads the zone when serial changes.
+* `fallthrough`, if specified will allow NXDOMAIN and other failures to be forwarded to the next plugin chain.
 
 If you need outgoing zone transfers, take a look at the *transfer* plugin.
 

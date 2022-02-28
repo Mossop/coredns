@@ -9,6 +9,7 @@ import (
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
+	"github.com/coredns/coredns/plugin/pkg/fall"
 	"github.com/coredns/coredns/plugin/pkg/upstream"
 	"github.com/coredns/coredns/plugin/transfer"
 )
@@ -75,6 +76,7 @@ func fileParse(c *caddy.Controller) (Zones, error) {
 
 	var openErr error
 	reload := 1 * time.Minute
+	var f fall.F
 
 	for c.Next() {
 		// file db.file [zones...]
@@ -108,6 +110,8 @@ func fileParse(c *caddy.Controller) (Zones, error) {
 
 		for c.NextBlock() {
 			switch c.Val() {
+			case "fallthrough":
+				f.SetZonesFromArgs(c.RemainingArgs())
 			case "reload":
 				t := c.RemainingArgs()
 				if len(t) < 1 {
@@ -141,5 +145,5 @@ func fileParse(c *caddy.Controller) (Zones, error) {
 		log.Warningf("Failed to open %q: trying again in %s", openErr, reload)
 
 	}
-	return Zones{Z: z, Names: names}, nil
+	return Zones{Z: z, Names: names, Fall: f}, nil
 }

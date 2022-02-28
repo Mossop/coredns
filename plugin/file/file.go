@@ -7,6 +7,7 @@ import (
 	"io"
 
 	"github.com/coredns/coredns/plugin"
+	"github.com/coredns/coredns/plugin/pkg/fall"
 	clog "github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/plugin/transfer"
 	"github.com/coredns/coredns/request"
@@ -28,6 +29,7 @@ type (
 	Zones struct {
 		Z     map[string]*Zone // A map mapping zone (origin) to the Zone's data
 		Names []string         // All the keys from the map Z as a string slice.
+		Fall fall.F            // A list of zones allowed to fallthrough.
 	}
 )
 
@@ -96,6 +98,9 @@ func (f File) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (i
 	case NoData:
 	case NameError:
 		m.Rcode = dns.RcodeNameError
+		if f.Zones.Fall.Through(qname) {
+			return plugin.NextOrFailure(f.Name(), f.Next, ctx, w, r)
+		}
 	case Delegation:
 		m.Authoritative = false
 	case ServerFailure:
